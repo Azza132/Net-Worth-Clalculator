@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Net Worth Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #181c27;
+    --surface2: #1e2336;
+    --border: #272d42;
+    --text: #e8ecf5;
+    --muted: #5a6585;
+    --accent: #4ade80;
+    --accent-light: rgba(74,222,128,0.1);
+    --red: #f87171;
+    --red-light: rgba(248,113,113,0.1);
+    --gold: #fbbf24;
+    --gold-light: rgba(251,191,36,0.1);
+    --font-display: 'Playfair Display', serif;
+    --font-body: 'Lato', sans-serif;
+    --shadow: 0 2px 16px rgba(0,0,0,0.3);
+    --shadow-lg: 0 8px 40px rgba(0,0,0,0.4);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+  }
+
+  /* subtle paper texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .page { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 40px 24px 80px; }
+
+  /* HEADER */
+  header {
+    text-align: center;
+    margin-bottom: 48px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+  header::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 2px;
+    background: var(--accent);
+  }
+  header .eyebrow {
+    font-size: 11px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+  header h1 {
+    font-family: var(--font-display);
+    font-size: clamp(36px, 5vw, 56px);
+    font-weight: 900;
+    line-height: 1.1;
+    color: var(--text);
+  }
+  header p {
+    margin-top: 10px;
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 300;
+  }
+
+  /* NET WORTH HERO */
+  .nw-hero {
+    background: linear-gradient(135deg, #181c27 0%, #1a2235 60%, #151b2e 100%);
+    border: 1px solid var(--border);
+    padding: 40px 48px;
+    margin-bottom: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.4);
+  }
+  .nw-hero::before {
+    content: '£';
+    position: absolute;
+    right: -20px;
+    top: -30px;
+    font-family: var(--font-display);
+    font-size: 200px;
+    color: rgba(255,255,255,0.03);
+    font-weight: 900;
+    line-height: 1;
+    pointer-events: none;
+  }
+  .nw-hero::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(74,222,128,0.5), transparent);
+  }
+  .nw-hero-label {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+    font-weight: 700;
+  }
+  .nw-hero-value {
+    font-family: var(--font-display);
+    font-size: clamp(40px, 6vw, 64px);
+    font-weight: 900;
+    line-height: 1;
+    transition: all 0.4s ease;
+  }
+  .nw-hero-value.positive { color: var(--accent); text-shadow: 0 0 40px rgba(74,222,128,0.25); }
+  .nw-hero-value.negative { color: var(--red); text-shadow: 0 0 40px rgba(248,113,113,0.25); }
+  .nw-hero-stats {
+    display: flex;
+    gap: 40px;
+    flex-shrink: 0;
+  }
+  .hero-stat { text-align: right; }
+  .hero-stat-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+  .hero-stat-value { font-family: var(--font-display); font-size: 24px; font-weight: 700; }
+  .hero-stat-value.green { color: var(--accent); }
+  .hero-stat-value.red { color: var(--red); }
+
+  /* MAIN GRID */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 32px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+  }
+
+  .card-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .card-title {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .card-title .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .dot-green { background: var(--accent); }
+  .dot-red { background: var(--red); }
+
+  .card-total {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 700;
+  }
+  .card-total.green { color: var(--accent); }
+  .card-total.red { color: var(--red); }
+
+  .card-body { padding: 16px 24px; }
+
+  /* Category sections */
+  .category {
+    margin-bottom: 16px;
+  }
+  .category-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 700;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px dashed var(--border);
+  }
+
+  /* Item rows */
+  .item-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 8px;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--surface2);
+    animation: fadeIn 0.25s ease;
+  }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:translateY(0); } }
+
+  input[type="text"], input[type="number"] {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 13px;
+    padding: 7px 10px;
+    outline: none;
+    width: 100%;
+    transition: border-color 0.2s, background 0.2s;
+    border-radius: 2px;
+  }
+  input:focus { border-color: var(--accent); background: white; }
+  input[type="number"] { text-align: right; max-width: 130px; }
+
+  .item-value-display {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 700;
+    min-width: 100px;
+    text-align: right;
+    color: var(--text);
+  }
+
+  .delete-btn {
+    background: none;
+    border: none;
+    color: var(--border);
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    padding: 4px;
+    transition: color 0.2s;
+    width: 24px;
+    text-align: center;
+  }
+  .delete-btn:hover { color: var(--red); }
+
+  .add-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: 1px dashed var(--border);
+    color: var(--muted);
+    font-family: var(--font-body);
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-weight: 700;
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+    margin-top: 8px;
+  }
+  .add-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+
+  /* CHART */
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    margin-bottom: 24px;
+  }
+  .chart-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .chart-title { font-family: var(--font-display); font-size: 18px; font-weight: 700; }
+  .chart-area { padding: 24px; position: relative; }
+  canvas { width: 100% !important; }
+
+  /* SNAPSHOT */
+  .snapshot-bar {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .snapshot-label { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); font-weight: 700; white-space: nowrap; }
+  .snapshot-btn {
+    background: var(--accent);
+    color: #0f1117;
+    border: none;
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .snapshot-btn:hover { background: #3ab868; color: #000; }
+  .snapshot-date {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 13px;
+    padding: 8px 12px;
+    outline: none;
+    border-radius: 2px;
+  }
+  .snapshot-date:focus { border-color: var(--accent); }
+  .clear-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-left: auto;
+  }
+  .clear-btn:hover { border-color: var(--red); color: var(--red); }
+
+  /* History table */
+  .history-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    margin-bottom: 24px;
+  }
+  .history-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .history-title { font-family: var(--font-display); font-size: 18px; font-weight: 700; }
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 700;
+    padding: 10px 24px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  th:last-child, td:last-child { text-align: right; }
+  td {
+    padding: 12px 24px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--surface2);
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+  .td-nw { font-family: var(--font-display); font-weight: 700; font-size: 15px; }
+  .td-change { font-size: 12px; font-weight: 700; }
+  .td-change.up { color: var(--accent); }
+  .td-change.down { color: var(--red); }
+  .del-row { background: none; border: none; color: var(--border); cursor: pointer; font-size: 14px; transition: color 0.2s; }
+  .del-row:hover { color: var(--red); }
+
+  .empty-history {
+    padding: 32px 24px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+    font-style: italic;
+  }
+
+  /* Allocation donut */
+  .bottom-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  .alloc-list { padding: 16px 24px; }
+  .alloc-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--surface2);
+    font-size: 13px;
+  }
+  .alloc-item:last-child { border-bottom: none; }
+  .alloc-name { display: flex; align-items: center; gap: 8px; }
+  .alloc-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .alloc-pct { font-family: var(--font-display); font-weight: 700; color: var(--muted); }
+  .alloc-val { font-family: var(--font-display); font-weight: 700; font-size: 14px; }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    padding-top: 32px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+  footer span { color: var(--text); font-weight: 700; }
+
+  @media (max-width: 700px) {
+    .main-grid, .bottom-grid { grid-template-columns: 1fr; }
+    .nw-hero { flex-direction: column; align-items: flex-start; padding: 28px 24px; }
+    .nw-hero-stats { flex-direction: row; }
+    .hero-stat { text-align: left; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="eyebrow">Personal Finance</div>
+    <h1>Net Worth Calculator</h1>
+    <p>Track your assets, liabilities, and net worth over time — 100% offline, saved in your browser</p>
+  </header>
+
+  <!-- HERO -->
+  <div class="nw-hero">
+    <div>
+      <div class="nw-hero-label">Total Net Worth</div>
+      <div class="nw-hero-value" id="hero-nw">£0</div>
+    </div>
+    <div class="nw-hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-label">Total Assets</div>
+        <div class="hero-stat-value green" id="hero-assets">£0</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-label">Total Liabilities</div>
+        <div class="hero-stat-value red" id="hero-liabilities">£0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ASSETS & LIABILITIES -->
+  <div class="main-grid">
+
+    <!-- ASSETS -->
+    <div class="card" id="assets-card">
+      <div class="card-header">
+        <div class="card-title"><span class="dot dot-green"></span>Assets</div>
+        <div class="card-total green" id="assets-total">£0</div>
+      </div>
+      <div class="card-body" id="assets-body">
+        <!-- rendered by JS -->
+      </div>
+    </div>
+
+    <!-- LIABILITIES -->
+    <div class="card" id="liabilities-card">
+      <div class="card-header">
+        <div class="card-title"><span class="dot dot-red"></span>Liabilities</div>
+        <div class="card-total red" id="liabilities-total">£0</div>
+      </div>
+      <div class="card-body" id="liabilities-body">
+        <!-- rendered by JS -->
+      </div>
+    </div>
+
+  </div>
+
+  <!-- SNAPSHOT BAR -->
+  <div class="snapshot-bar">
+    <span class="snapshot-label">Save Snapshot</span>
+    <input type="month" class="snapshot-date" id="snapshot-date">
+    <button class="snapshot-btn" onclick="saveSnapshot()">📸 SAVE THIS MONTH</button>
+    <button class="clear-btn" onclick="clearHistory()">CLEAR HISTORY</button>
+  </div>
+
+  <!-- CHART -->
+  <div class="chart-card">
+    <div class="chart-header">
+      <div class="chart-title">Net Worth Over Time</div>
+      <span style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted)">Monthly snapshots</span>
+    </div>
+    <div class="chart-area">
+      <canvas id="nw-chart" height="220"></canvas>
+    </div>
+  </div>
+
+  <!-- BOTTOM GRID -->
+  <div class="bottom-grid">
+
+    <!-- HISTORY TABLE -->
+    <div class="history-card">
+      <div class="history-header">
+        <div class="history-title">Snapshot History</div>
+      </div>
+      <div id="history-body">
+        <div class="empty-history">No snapshots yet — save your first one above</div>
+      </div>
+    </div>
+
+    <!-- ALLOCATION -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Asset Allocation</div>
+      </div>
+      <div style="padding:16px 24px;display:flex;justify-content:center;">
+        <canvas id="donut-chart" width="180" height="180"></canvas>
+      </div>
+      <div class="alloc-list" id="alloc-list"></div>
+    </div>
+
+  </div>
+
+  <footer>Made by <span>Aaron Sermon</span> &nbsp;·&nbsp; All data saved locally in your browser &nbsp;·&nbsp; No internet required</footer>
+
+</div>
+
+<script>
+// ─── DEFAULT DATA ───────────────────────────────────────────────
+const ASSET_CATEGORIES = ['Cash & Savings', 'Investments', 'Property', 'Other Assets'];
+const LIABILITY_CATEGORIES = ['Mortgage', 'Loans & Credit', 'Other Debts'];
+
+const ALLOC_COLORS = [
+  '#4ade80','#38bdf8','#fb923c','#f472b6',
+  '#a78bfa','#facc15','#34d399','#f87171'
+];
+
+function defaultAssets() {
+  return {
+    'Cash & Savings': [
+      {name:'Current Account', value:0},
+      {name:'Savings Account', value:0},
+    ],
+    'Investments': [
+      {name:'ISA / Stocks', value:0},
+      {name:'Pension', value:0},
+    ],
+    'Property': [
+      {name:'Property Value', value:0},
+    ],
+    'Other Assets': []
+  };
+}
+
+function defaultLiabilities() {
+  return {
+    'Mortgage': [
+      {name:'Mortgage Balance', value:0},
+    ],
+    'Loans & Credit': [
+      {name:'Credit Card', value:0},
+      {name:'Student Loan', value:0},
+    ],
+    'Other Debts': []
+  };
+}
+
+// ─── STATE ───────────────────────────────────────────────────────
+let state = {
+  assets: defaultAssets(),
+  liabilities: defaultLiabilities(),
+  history: [] // [{date, assets, liabilities, netWorth}]
+};
+
+// ─── PERSISTENCE ─────────────────────────────────────────────────
+function save() {
+  localStorage.setItem('nw_state', JSON.stringify(state));
+}
+function load() {
+  const raw = localStorage.getItem('nw_state');
+  if (raw) {
+    try { state = JSON.parse(raw); } catch(e) {}
+    // ensure categories exist
+    ASSET_CATEGORIES.forEach(c => { if (!state.assets[c]) state.assets[c] = []; });
+    LIABILITY_CATEGORIES.forEach(c => { if (!state.liabilities[c]) state.liabilities[c] = []; });
+  }
+}
+
+// ─── CALCULATIONS ─────────────────────────────────────────────────
+function totalOf(obj) {
+  return Object.values(obj).flat().reduce((s,i) => s + (parseFloat(i.value)||0), 0);
+}
+
+function fmt(n) {
+  const abs = Math.abs(n);
+  const str = abs.toLocaleString('en-GB', {minimumFractionDigits:0, maximumFractionDigits:0});
+  return (n < 0 ? '-' : '') + '£' + str;
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────
+function renderSection(categories, containerId, type) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+
+  categories.forEach(cat => {
+    const items = state[type][cat] || [];
+    const catTotal = items.reduce((s,i) => s + (parseFloat(i.value)||0), 0);
+
+    const div = document.createElement('div');
+    div.className = 'category';
+    div.innerHTML = `<div class="category-label">${cat} <span style="float:right;color:${type==='assets'?'var(--accent)':'var(--red)'};">${fmt(catTotal)}</span></div>`;
+
+    items.forEach((item, idx) => {
+      const row = document.createElement('div');
+      row.className = 'item-row';
+      row.innerHTML = `
+        <input type="text" value="${item.name}" placeholder="Name"
+          onchange="updateItem('${type}','${cat}',${idx},'name',this.value)">
+        <input type="number" value="${item.value||''}" placeholder="0" min="0"
+          oninput="updateItem('${type}','${cat}',${idx},'value',this.value)">
+        <button class="delete-btn" onclick="deleteItem('${type}','${cat}',${idx})">×</button>`;
+      div.appendChild(row);
+    });
+
+    const addBtn = document.createElement('button');
+    addBtn.className = 'add-btn';
+    addBtn.innerHTML = `+ Add ${cat}`;
+    addBtn.onclick = () => addItem(type, cat);
+    div.appendChild(addBtn);
+
+    container.appendChild(div);
+  });
+}
+
+function render() {
+  renderSection(ASSET_CATEGORIES, 'assets-body', 'assets');
+  renderSection(LIABILITY_CATEGORIES, 'liabilities-body', 'liabilities');
+
+  const assets = totalOf(state.assets);
+  const liabilities = totalOf(state.liabilities);
+  const nw = assets - liabilities;
+
+  document.getElementById('assets-total').textContent = fmt(assets);
+  document.getElementById('liabilities-total').textContent = fmt(liabilities);
+  document.getElementById('hero-assets').textContent = fmt(assets);
+  document.getElementById('hero-liabilities').textContent = fmt(liabilities);
+
+  const heroEl = document.getElementById('hero-nw');
+  heroEl.textContent = fmt(nw);
+  heroEl.className = 'nw-hero-value ' + (nw >= 0 ? 'positive' : 'negative');
+
+  renderHistory();
+  renderChart();
+  renderDonut();
+  save();
+}
+
+// ─── ITEM CRUD ─────────────────────────────────────────────────────
+function addItem(type, cat) {
+  state[type][cat].push({name:'', value:0});
+  render();
+}
+function deleteItem(type, cat, idx) {
+  state[type][cat].splice(idx, 1);
+  render();
+}
+function updateItem(type, cat, idx, field, val) {
+  state[type][cat][idx][field] = field === 'value' ? parseFloat(val)||0 : val;
+  // re-render totals and charts but not the full DOM (to preserve focus)
+  const assets = totalOf(state.assets);
+  const liabilities = totalOf(state.liabilities);
+  const nw = assets - liabilities;
+  document.getElementById('assets-total').textContent = fmt(assets);
+  document.getElementById('liabilities-total').textContent = fmt(liabilities);
+  document.getElementById('hero-assets').textContent = fmt(assets);
+  document.getElementById('hero-liabilities').textContent = fmt(liabilities);
+  const heroEl = document.getElementById('hero-nw');
+  heroEl.textContent = fmt(nw);
+  heroEl.className = 'nw-hero-value ' + (nw >= 0 ? 'positive' : 'negative');
+  renderDonut();
+  save();
+}
+
+// ─── SNAPSHOT ──────────────────────────────────────────────────────
+function saveSnapshot() {
+  const dateInput = document.getElementById('snapshot-date').value;
+  if (!dateInput) return alert('Please select a month first.');
+
+  // Check if snapshot for this month already exists
+  const existing = state.history.findIndex(h => h.date === dateInput);
+
+  const assets = totalOf(state.assets);
+  const liabilities = totalOf(state.liabilities);
+  const snap = { date: dateInput, assets, liabilities, netWorth: assets - liabilities };
+
+  if (existing >= 0) {
+    if (!confirm(`A snapshot for ${fmtDate(dateInput)} already exists. Overwrite it?`)) return;
+    state.history[existing] = snap;
+  } else {
+    state.history.push(snap);
+  }
+
+  state.history.sort((a,b) => a.date.localeCompare(b.date));
+  render();
+}
+
+function deleteSnapshot(idx) {
+  state.history.splice(idx, 1);
+  render();
+}
+
+function clearHistory() {
+  if (!state.history.length) return;
+  if (confirm('Clear all snapshot history? This cannot be undone.')) {
+    state.history = [];
+    render();
+  }
+}
+
+function fmtDate(str) {
+  const [y,m] = str.split('-');
+  return new Date(y, m-1).toLocaleDateString('en-GB', {month:'short', year:'numeric'});
+}
+
+// ─── RENDER HISTORY TABLE ──────────────────────────────────────────
+function renderHistory() {
+  const body = document.getElementById('history-body');
+  if (!state.history.length) {
+    body.innerHTML = `<div class="empty-history">No snapshots yet — save your first one above</div>`;
+    return;
+  }
+
+  const rows = [...state.history].reverse().map((snap, ri) => {
+    const idx = state.history.length - 1 - ri;
+    const prev = state.history[idx - 1];
+    let changeHTML = '—';
+    if (prev) {
+      const diff = snap.netWorth - prev.netWorth;
+      const cls = diff >= 0 ? 'up' : 'down';
+      changeHTML = `<span class="td-change ${cls}">${diff >= 0 ? '▲' : '▼'} ${fmt(Math.abs(diff))}</span>`;
+    }
+    return `<tr>
+      <td>${fmtDate(snap.date)}</td>
+      <td style="color:var(--accent)">${fmt(snap.assets)}</td>
+      <td style="color:var(--red)">${fmt(snap.liabilities)}</td>
+      <td class="td-nw">${fmt(snap.netWorth)}</td>
+      <td>${changeHTML}</td>
+      <td><button class="del-row" onclick="deleteSnapshot(${idx})">×</button></td>
+    </tr>`;
+  }).join('');
+
+  body.innerHTML = `<table>
+    <thead><tr>
+      <th>Month</th><th>Assets</th><th>Liabilities</th><th>Net Worth</th><th>Change</th><th></th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+// ─── CHART ─────────────────────────────────────────────────────────
+let chartInstance = null;
+
+function renderChart() {
+  const canvas = document.getElementById('nw-chart');
+  const ctx = canvas.getContext('2d');
+
+  if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+
+  if (state.history.length < 2) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#5a6585';
+    ctx.font = '13px Lato';
+    ctx.textAlign = 'center';
+    ctx.fillText('Save at least 2 monthly snapshots to see your trend', canvas.width/2, 110);
+    return;
+  }
+
+  const labels = state.history.map(h => fmtDate(h.date));
+  const nwData = state.history.map(h => h.netWorth);
+  const assetData = state.history.map(h => h.assets);
+  const liabData = state.history.map(h => h.liabilities);
+
+  chartInstance = new SimpleChart(ctx, {
+    labels, nwData, assetData, liabData
+  });
+}
+
+// Simple canvas chart (no library dependency)
+class SimpleChart {
+  constructor(ctx, {labels, nwData, assetData, liabData}) {
+    this.ctx = ctx;
+    this.labels = labels;
+    this.nwData = nwData;
+    this.assetData = assetData;
+    this.liabData = liabData;
+    this.draw();
+  }
+
+  destroy() {}
+
+  draw() {
+    const ctx = this.ctx;
+    const canvas = ctx.canvas;
+    const dpr = window.devicePixelRatio || 1;
+    const W = canvas.parentElement.clientWidth - 48;
+    const H = 220;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.scale(dpr, dpr);
+
+    const pad = {top:20, right:20, bottom:40, left:70};
+    const cw = W - pad.left - pad.right;
+    const ch = H - pad.top - pad.bottom;
+
+    const allVals = [...this.nwData, ...this.assetData, ...this.liabData];
+    const minV = Math.min(...allVals);
+    const maxV = Math.max(...allVals);
+    const range = maxV - minV || 1;
+
+    const scaleY = v => pad.top + ch - ((v - minV) / range) * ch;
+    const scaleX = i => pad.left + (i / (this.labels.length - 1)) * cw;
+
+    // Grid lines
+    ctx.strokeStyle = '#272d42';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+      const y = pad.top + (i/4)*ch;
+      ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + cw, y); ctx.stroke();
+      const val = maxV - (i/4)*range;
+      ctx.fillStyle = '#5a6585';
+      ctx.font = '10px Lato';
+      ctx.textAlign = 'right';
+      ctx.fillText(fmt(val), pad.left - 6, y + 4);
+    }
+
+    // Zero line if needed
+    if (minV < 0 && maxV > 0) {
+      const zy = scaleY(0);
+      ctx.strokeStyle = '#3a4060';
+      ctx.setLineDash([4,4]);
+      ctx.beginPath(); ctx.moveTo(pad.left, zy); ctx.lineTo(pad.left+cw, zy); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    const drawLine = (data, color, dash=[]) => {
+      ctx.beginPath();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.setLineDash(dash);
+      data.forEach((v,i) => {
+        const x = scaleX(i), y = scaleY(v);
+        i === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+      });
+      ctx.stroke();
+      ctx.setLineDash([]);
+    };
+
+    // Asset fill
+    ctx.beginPath();
+    this.assetData.forEach((v,i) => {
+      const x = scaleX(i), y = scaleY(v);
+      i === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    });
+    ctx.lineTo(scaleX(this.assetData.length-1), scaleY(minV));
+    ctx.lineTo(scaleX(0), scaleY(minV));
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(74,222,128,0.06)';
+    ctx.fill();
+
+    drawLine(this.assetData, 'rgba(74,222,128,0.4)', [5,5]);
+    drawLine(this.liabData, 'rgba(248,113,113,0.4)', [5,5]);
+    drawLine(this.nwData, '#4ade80');
+
+    // Dots on net worth line
+    this.nwData.forEach((v,i) => {
+      const x = scaleX(i), y = scaleY(v);
+      ctx.beginPath();
+      ctx.arc(x, y, 4, 0, Math.PI*2);
+      ctx.fillStyle = '#4ade80';
+      ctx.fill();
+      ctx.strokeStyle = '#181c27';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    });
+
+    // X labels
+    ctx.fillStyle = '#5a6585';
+    ctx.font = '10px Lato';
+    ctx.textAlign = 'center';
+    this.labels.forEach((l,i) => {
+      ctx.fillText(l, scaleX(i), H - 8);
+    });
+
+    // Legend
+    const legend = [
+      {label:'Net Worth', color:'#4ade80', dash:false},
+      {label:'Assets', color:'rgba(74,222,128,0.5)', dash:true},
+      {label:'Liabilities', color:'rgba(248,113,113,0.5)', dash:true},
+    ];
+    let lx = pad.left;
+    legend.forEach(({label, color, dash}) => {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.setLineDash(dash ? [5,5] : []);
+      ctx.beginPath(); ctx.moveTo(lx, 12); ctx.lineTo(lx+20, 12); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#5a6585';
+      ctx.font = '10px Lato';
+      ctx.textAlign = 'left';
+      ctx.fillText(label, lx+24, 16);
+      lx += 90;
+    });
+  }
+}
+
+// ─── DONUT ─────────────────────────────────────────────────────────
+function renderDonut() {
+  const canvas = document.getElementById('donut-chart');
+  const ctx = canvas.getContext('2d');
+  const W = 180, H = 180;
+  canvas.width = W; canvas.height = H;
+  ctx.clearRect(0,0,W,H);
+
+  const allItems = Object.entries(state.assets).flatMap(([cat, items]) =>
+    items.map(i => ({name: i.name || cat, value: parseFloat(i.value)||0}))
+  ).filter(i => i.value > 0);
+
+  const total = allItems.reduce((s,i) => s+i.value, 0);
+
+  const listEl = document.getElementById('alloc-list');
+
+  if (!total) {
+    ctx.fillStyle = '#272d42';
+    ctx.beginPath(); ctx.arc(90,90,70,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#181c27';
+    ctx.beginPath(); ctx.arc(90,90,42,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#9a9185';
+    ctx.font = '11px Lato'; ctx.textAlign='center';
+    ctx.fillText('No assets', 90, 94);
+    listEl.innerHTML = '';
+    return;
+  }
+
+  let angle = -Math.PI/2;
+  allItems.forEach((item, i) => {
+    const slice = (item.value / total) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.moveTo(90,90);
+    ctx.arc(90,90,72,angle,angle+slice);
+    ctx.closePath();
+    ctx.fillStyle = ALLOC_COLORS[i % ALLOC_COLORS.length];
+    ctx.fill();
+    angle += slice;
+  });
+
+  // Donut hole
+  ctx.beginPath(); ctx.arc(90,90,44,0,Math.PI*2);
+  ctx.fillStyle = '#181c27'; ctx.fill();
+
+  ctx.fillStyle = '#e8ecf5';
+  ctx.font = 'bold 13px Playfair Display';
+  ctx.textAlign = 'center';
+  ctx.fillText(fmt(total), 90, 88);
+  ctx.fillStyle = '#5a6585';
+  ctx.font = '10px Lato';
+  ctx.fillText('total assets', 90, 103);
+
+  listEl.innerHTML = allItems.map((item, i) => `
+    <div class="alloc-item">
+      <span class="alloc-name">
+        <span class="alloc-dot" style="background:${ALLOC_COLORS[i % ALLOC_COLORS.length]}"></span>
+        ${item.name}
+      </span>
+      <span>
+        <span class="alloc-pct">${((item.value/total)*100).toFixed(1)}%</span>
+        &nbsp;&nbsp;
+        <span class="alloc-val">${fmt(item.value)}</span>
+      </span>
+    </div>
+  `).join('');
+}
+
+// ─── INIT ──────────────────────────────────────────────────────────
+// Set default snapshot date to current month
+const now = new Date();
+document.getElementById('snapshot-date').value =
+  `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+
+load();
+render();
+window.addEventListener('resize', () => { renderChart(); renderDonut(); });
+</script>
+</body>
+</html>
